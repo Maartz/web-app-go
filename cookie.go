@@ -39,9 +39,9 @@ func clearSession(w http.ResponseWriter, name string) {
 	http.SetCookie(w, cookie)
 }
 
-func setMsg(w http.ResponseWriter, name string, msg string)  {
+func setMsg(w http.ResponseWriter, name string, msg string) {
 	value := map[string]string{
-		name : msg,
+		name: msg,
 	}
 	if encoded, err := cookieHandler.Encode("session", value); err == nil {
 		cookie := &http.Cookie{

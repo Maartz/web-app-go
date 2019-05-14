@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -18,10 +21,10 @@ type User struct {
 func saveData(u *User) error {
 	var db, _ = sql.Open("sqlite3", "users.sqlite3")
 	defer db.Close()
-	db.Exec("create table if not exists users (firstname text, lastname text, username text, email text, password text)")
+	db.Exec("create table if not exists users (uuid text, firstname text, lastname text, username text, email text, password text)")
 	tx, _ := db.Begin()
-	stmt, _ := tx.Prepare("insert into users (firstname, lastname, username, email, password) values (?,?,?,?,?)")
-	_, err := stmt.Exec(u.Fname, u.Lname, u.Username, u.Email, u.Password)
+	stmt, _ := tx.Prepare("insert into users (uuid, firstname, lastname, username, email, password) values (?,?,?,?,?,?)")
+	_, err := stmt.Exec(u.Uuid, u.Fname, u.Lname, u.Username, u.Email, u.Password)
 	tx.Commit()
 	return err
 }
@@ -30,7 +33,7 @@ func userExists(u *User) bool {
 	var db, _ = sql.Open("sqlite3", "users.sqlite3")
 	defer db.Close()
 	var ps, us string
-	q, err := db.Query("select username, password from users where username ='" + u.Username + "' and password ='" + u.Password + "'")
+	q, err := db.Query("select username, password from users where username ='" + u.Username + "'")
 	if err != nil {
 		return false
 	}
@@ -38,8 +41,25 @@ func userExists(u *User) bool {
 		q.Scan(&us, &ps)
 	}
 
-	if us == u.Username && ps == u.Password {
+	pw := bcrypt.CompareHashAndPassword([]byte(ps), []byte(u.Password))
+	if us == u.Username && pw == nil {
 		return true
 	}
 	return false
+}
+
+func encryptPass(password string) string {
+	pass := []byte(password)
+	hashpw, _ := bcrypt.GenerateFromPassword(pass, bcrypt.DefaultCost)
+	return string(hashpw)
+}
+
+func Uuid() (id string) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return
+	}
+	id = fmt.Sprintf("%X-%X-%X-%X-%X", b[:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return
 }

@@ -19,7 +19,10 @@ func render(w http.ResponseWriter, name string, data interface{}) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	tmpl.ExecuteTemplate(w, name, data)
+	err = tmpl.ExecuteTemplate(w, name, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+	}
 }
 
 func main() {
@@ -41,14 +44,18 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		u := &User{}
 		render(w, "signup", u)
 	case "POST":
-		u := &User {
-			Fname: r.FormValue("fName"),
-			Lname: r.FormValue("lName"),
-			Email: r.FormValue("email"),
+		u := &User{
+			Uuid:     Uuid(),
+			Fname:    r.FormValue("fName"),
+			Lname:    r.FormValue("lName"),
+			Email:    r.FormValue("email"),
 			Username: r.FormValue("userName"),
-			Password: r.FormValue("password"),
+			Password: encryptPass(r.FormValue("password")),
 		}
-		saveData(u)
+		err := saveData(u)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		http.Redirect(w, r, "/", 302)
 	}
 }
