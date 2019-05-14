@@ -12,6 +12,7 @@ type User struct {
 	Username string
 	Email    string
 	Password string
+	Errors   map[string]string
 }
 
 func saveData(u *User) error {
