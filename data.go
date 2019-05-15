@@ -1,21 +1,20 @@
 package main
 
 import (
-	"crypto/rand"
 	"database/sql"
-	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	Uuid     string
-	Fname    string
-	Lname    string
-	Username string
-	Email    string
-	Password string
-	Errors   map[string]string
+	Uuid     string            `valid:"required,uuidv4"`
+	Username string            `valid:"required,alphanum"`
+	Password string            `valid:"required"`
+	Fname    string            `valid:"required,alpha"`
+	Lname    string            `valid:"required,alpha"`
+	Email    string            `valid:"required,email"`
+	Errors   map[string]string `valid:"-"`
 }
 
 func saveData(u *User) error {
@@ -54,12 +53,7 @@ func encryptPass(password string) string {
 	return string(hashpw)
 }
 
-func Uuid() (id string) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		return
-	}
-	id = fmt.Sprintf("%X-%X-%X-%X-%X", b[:4], b[4:6], b[6:8], b[8:10], b[10:])
-	return
+func Uuid() string {
+	id := uuid.Must(uuid.NewV4())
+	return id.String()
 }
